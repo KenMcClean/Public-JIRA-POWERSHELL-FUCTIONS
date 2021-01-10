@@ -26,7 +26,7 @@ $indexPosition = 0
 #Pagination always starts at 0, we don't need to calculate that
 
 #------------Calculate the limit of pagination index------------
-$maxIndex = Invoke-webrequest -Uri "https://bwa.nrs.gov.bc.ca/int/jira/secure/ManageFilters.jspa?filterView=search&Search=Search&filterView=search&searchName=&searchOwnerUserName=&searchShareType=any&projectShare=12711&roleShare=&groupShare=ENV_AP_JIRA_IIT_Internal_Staff_only&userShare=&pagingOffset=$indexPosition&sortAscending=true&sortColumn=name" -Method get -headers $headers
+$maxIndex = Invoke-webrequest -Uri "<Jira URL>/jira/secure/ManageFilters.jspa?filterView=search&Search=Search&filterView=search&searchName=&searchOwnerUserName=&searchShareType=any&projectShare=12711&roleShare=&groupShare=ENV_AP_JIRA_IIT_Internal_Staff_only&userShare=&pagingOffset=$indexPosition&sortAscending=true&sortColumn=name" -Method get -headers $headers
 #Because we're not making a call against the API, we're not using invoke-rest method. Instead we need to parse the HTML that is returned
 
 $maxIndex = $maxIndex.ParsedHtml.body.getElementsByTagName('div') | Where {$_.getAttributeNode('class').Value -eq 'pagination aui-item'}
@@ -44,7 +44,7 @@ $maxPaginationRange = [math]::ceiling($matches[0] / 20)
 
 #------------Start iterating through the pages of results------------
 while($indexPosition -lt $maxPaginationRange){
-$data = Invoke-webrequest -Uri "https://bwa.nrs.gov.bc.ca/int/jira/secure/ManageFilters.jspa?filterView=search&Search=Search&filterView=search&searchName=&searchOwnerUserName=&searchShareType=any&projectShare=12711&roleShare=&groupShare=ENV_AP_JIRA_IIT_Internal_Staff_only&userShare=&pagingOffset=$indexPosition&sortAscending=true&sortColumn=name" -Method get -headers $headers
+$data = Invoke-webrequest -Uri "<Jira URL>/jira/secure/ManageFilters.jspa?filterView=search&Search=Search&filterView=search&searchName=&searchOwnerUserName=&searchShareType=any&projectShare=12711&roleShare=&groupShare=ENV_AP_JIRA_IIT_Internal_Staff_only&userShare=&pagingOffset=$indexPosition&sortAscending=true&sortColumn=name" -Method get -headers $headers
 #call the pages of results
 
 $filterID = $data.Links.id -like "filterlink*" -replace "filterlink_", ""
@@ -53,7 +53,7 @@ $filterID = $data.Links.id -like "filterlink*" -replace "filterlink_", ""
 
 #------------Query the API for the filter name and JQL of each filter------------
 foreach($id in $filterid){
-$filterData = Invoke-restmethod -Uri "https://bwa.nrs.gov.bc.ca/int/jira/rest/api/2/filter/$id" -Method get -headers $headers
+$filterData = Invoke-restmethod -Uri "<Jira URL>/jira/rest/api/2/filter/$id" -Method get -headers $headers
 #Finally we can go back to calling the API, using the filter ID that we just noted
 
 "Filter name:"+$filterdata.name+"Filter JQL:"+$filterdata.jql | Out-File c:\data\Filterdata.txt -append
