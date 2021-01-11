@@ -12,7 +12,7 @@ $headers = Get-HttpBasicHeader $username $password
 
 foreach($task in $tasks){
 
-$restapiuri = "https://bwa.nrs.gov.bc.ca/int/jira/rest/api/2/issue/"+$task
+$restapiuri = $rootJiraURL+$task
 $parent = Invoke-RestMethod -uri $restapiuri -Headers $headers -Method GET
 $restapiuri
 
@@ -60,7 +60,7 @@ try {
 $b64 = ConvertTo-Base64($username + ":" + $password);
 $auth = "Basic " + $b64;
  
-$webRequest = [System.Net.WebRequest]::Create($rootJiraURL+"/jira/rest/api/2/issue/")
+$webRequest = [System.Net.WebRequest]::Create($rootJiraURL)
 $webRequest.ContentType = "application/json"
 $BodyStr = [System.Text.Encoding]::UTF8.GetBytes($body)
 $webrequest.ContentLength = $BodyStr.Length
