@@ -1,0 +1,94 @@
+[String] $rootJiraURL = "<path to JIRA>"
+[String] $username = "<username>"
+[String] $password = "<passsword>"
+[String] $summary = "summary";
+[String] $description = "description"
+[String] $priority = "2"
+#[String] $projectparent = "PMO-1076"
+$SubTasks = @('Overall', 'Scope', 'Budget', 'Schedule', 'Quality', 'Resources','Change Management', 'Benefits', 'Dependencies','Governance')
+$tasks = get-content "<Path to csv containing the target parent issues>"
+
+$headers = Get-HttpBasicHeader $username $password
+
+foreach($task in $tasks){
+
+$restapiuri = "https://bwa.nrs.gov.bc.ca/int/jira/rest/api/2/issue/"+$task
+$parent = Invoke-RestMethod -uri $restapiuri -Headers $headers -Method GET
+$restapiuri
+
+if($parent.fields.subtasks -ne 0){
+
+write-host $parent.key "has subtasks already"
+
+}else{
+foreach($subtask in $SubTasks){
+[String] $body = '{
+   "fields":{
+      "project":{
+         "key":"PMO"
+      },
+      "parent":{
+         "id":"'+$parent.id+'",
+         "key":"'+$parent.key+'"
+      },
+    
+      "summary":"'+$subtask+'",
+           "issuetype":{
+         "id":"11300",
+         "subtask":true
+      },
+      "reporter": {
+
+"name": "tqin"
+
+}
+
+   }
+}}'
+
+
+
+ 
+function ConvertTo-Base64($string) {
+$bytes = [System.Text.Encoding]::UTF8.GetBytes($string);
+$encoded = [System.Convert]::ToBase64String($bytes);
+return $encoded;
+}
+ 
+try {
+ 
+$b64 = ConvertTo-Base64($username + ":" + $password);
+$auth = "Basic " + $b64;
+ 
+$webRequest = [System.Net.WebRequest]::Create($rootJiraURL+"/jira/rest/api/2/issue/")
+$webRequest.ContentType = "application/json"
+$BodyStr = [System.Text.Encoding]::UTF8.GetBytes($body)
+$webrequest.ContentLength = $BodyStr.Length
+$webRequest.ServicePoint.Expect100Continue = $false
+$webRequest.Headers.Add("Authorization", $auth);
+$webRequest.PreAuthenticate = $true
+$webRequest.Method = "POST"
+$requestStream = $webRequest.GetRequestStream()
+$requestStream.Write($BodyStr, 0, $BodyStr.length)
+$requestStream.Close()
+[System.Net.WebResponse] $resp = $webRequest.GetResponse()
+ 
+$rs = $resp.GetResponseStream()
+[System.IO.StreamReader] $sr = New-Object System.IO.StreamReader -argumentList $rs
+[string] $results = $sr.ReadToEnd()
+Write-Output $results
+ 
+}
+ 
+catch [System.Net.WebException]{
+        if ($_.Exception -ne $null -and $_.Exception.Response -ne $null) {
+            $errorResult = $_.Exception.Response.GetResponseStream()
+            $errorText = (New-Object System.IO.StreamReader($errorResult)).ReadToEnd()
+            Write-Warning "The remote server response: $errorText"
+            Write-Output $_.Exception.Response.StatusCode
+        } else {
+            throw $_
+        }
+    }}
+
+    }}
